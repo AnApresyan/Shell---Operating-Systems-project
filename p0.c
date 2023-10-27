@@ -3,17 +3,6 @@
 //Authors: Anahit Apresyan - anahit.apresyan
 //		  Salma
 
-
-int TrocearCadena(char * str,   char * words[])
-{ 
-	int i=1;
-	if ((words[0]=strtok(str," \n\t"))==NULL)
-		return 0;
-	while ((words[i]=strtok(NULL," \n\t"))!=NULL)
-		i++;
-	return i; 
-}
-
 int main(int argc, char **argv)
 {
 	char line[MAXLINE];
@@ -42,13 +31,14 @@ int main(int argc, char **argv)
 		if (process_command(line, words, hist, open_files) == 0)
 			break;
 	}
-	destroy_list(hist);
-	destroy_list(open_files);
+	destroy_list(hist, 0);
+	destroy_list(open_files, 1);
 	return (EXIT_SUCCESS);
 }
 
 int process_command(char *line, char * words[], t_list *hist, t_list *open_files)
 {
+	// printf("LINEEEE: %s", line);
 	insert_element(hist, strdup(line));
 	int word_num = TrocearCadena(line, words);
 
@@ -65,7 +55,7 @@ int process_command(char *line, char * words[], t_list *hist, t_list *open_files
 			cmd_date_time(word_num, words);
 		if (!strcmp(words[0],"hist"))
 			cmd_hist(word_num, words, hist);
-		if (!strcmp(words[0],"comand"))
+		if (!strcmp(words[0],"command"))
 			 cmd_command(word_num, words, hist, open_files);
 		if (!strcmp(words[0], "open"))
 			 cmd_open(word_num, words, open_files);
@@ -81,6 +71,16 @@ int process_command(char *line, char * words[], t_list *hist, t_list *open_files
 		//	 cmd_help(word_num, words);
 		if (!strcmp(words[0],"quit") || !strcmp(words[0],"exit") || !strcmp(words[0],"bye"))
 			return (0);
+		if (!strcmp(words[0], "create"))
+			cmd_create(word_num, words);
+		if (!strcmp(words[0], "stat"))
+			cmd_stat(word_num, words);
+		if (!strcmp(words[0], "list"))
+			cmd_list(word_num, words);
+		if (!strcmp(words[0], "delete"))
+			cmd_delete(word_num, words);
+		if (!strcmp(words[0], "deltree"))
+			cmd_deltree(word_num, words);
 	}
 	return 1;
 }
@@ -113,27 +113,13 @@ void cmd_pid(int word_num, char *words[])
 
 void cmd_chdir(int word_num, char *words[])
 {
-	char *buff;
-	long size;
-
 	if (word_num > 1)
 	{
 		if (chdir(words[1]))
 			perror("Impossible to change the directory");
 	}
 	else
-	{
-		size = pathconf(".", _PC_PATH_MAX);
-		if ((buff = (char *)malloc((size_t)size))) {
-			if (getcwd(buff, size))
-				printf("Current working directory: %s\n", buff);
-			else
-				perror("getcwd");
-			free(buff);
-		}
-		else
-			perror("malloc");
-	}
+		current_directory();
 }
 
 void cmd_date_time(int word_num, char *words[])
@@ -182,13 +168,12 @@ void cmd_command(int word_num, char *words[], t_list *hist, t_list *open_files)
 {
 	
 	int i = 1;
-	int n = 0;
+	long n = 0;
 	t_node *node = hist->top;
 
 	
 	if (word_num > 1)
-		if (words[1][0] == '-' && words[1][1])
-			n = strtol(words[1] + 1, NULL, 10);
+		n = strtol(words[1], NULL, 10);
 	if (n > 0 && node)
 	{
 		while (i++ != n && node->next)
@@ -226,7 +211,7 @@ void cmd_open (int word_num, char * words[], t_list *open_files)
 
     for (int i=2; words[i]!=NULL; i++)
 	{
-		printf("in the for loop\n");
+		// printf("in the for loop\n");
 		if (!strcmp(words[i],"cr")) mode|=	O_CREAT;
 		else if (!strcmp(words[i],"ex")) mode|=O_EXCL;
 		else if (!strcmp(words[i],"ro"))mode|=O_RDONLY;
@@ -237,7 +222,7 @@ void cmd_open (int word_num, char * words[], t_list *open_files)
 		else break;
 	}
     
-	printf("The mode is: %d\n", mode);
+	// printf("The mode is: %d\n", mode);
     if ((df=open(words[1],mode,0777))==-1)
         perror ("Impossible to open the file");
     else
@@ -342,3 +327,108 @@ void cmd_infosys()
     }
     printf("%s %s %s %s\n", systemInfo.nodename, systemInfo.sysname, systemInfo.release, systemInfo.version);
 }
+
+void cmd_create(int word_num, char *words[])
+{
+	int flag = 0;
+
+	if (word_num > 1 && !strcmp(words[1], "-f"))
+		flag = 1;
+	if (word_num == 1 || (word_num == 2 && flag))
+	{
+		current_directory();
+		return;
+	}
+	
+	if (flag)
+	{
+		int fd = open(words[2], O_CREAT | O_WRONLY, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+
+		if (fd == -1)
+			perror("open");
+		else
+		{
+			printf("File '%s' created successfully.\n", words[2]);
+			close(fd);
+		}
+	}
+	else
+	{
+		int status = mkdir(words[1], S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+
+		if (!status)
+			printf("Directory '%s' created successfully.\n", words[1]);
+		else 
+			perror("mkdir");
+	}
+}
+
+void cmd_stat(int word_num, char *words[])
+{
+	int i;
+	int l = 0;
+	int acc = 0;
+	int link = 0;
+
+	for (i = 1; words[i] != NULL; i++)
+	{
+		if (strncmp(words[i], "-", 1))
+			break;
+		stat_flags(&l, &acc, &link, words[i]);
+	}
+
+	if (words[i] == NULL)
+		current_directory(); 
+	for (; words[i] != NULL; i++)
+		stat_helper(words[i], l, acc, link);
+}
+
+void cmd_list(int word_num, char *words[])
+{
+	int i;
+	int hid = 0;
+	int reca = 0;
+	int recb = 0;
+	int l = 0;
+	int acc = 0;
+	int link = 0;
+
+	for (i = 1; words[i] != NULL; i++)
+	{
+		if (strncmp(words[i], "-", 1))
+			break;
+		if (!strcmp(words[i], "-hid"))
+			hid = 1;
+		else if (!strcmp(words[i], "-reca") && !recb)
+			reca = 1;
+		else if (!strcmp(words[i], "-recb") && !reca)
+			recb = 1;
+		stat_flags(&l, &acc, &link, words[i]);
+	}
+	if (words[i] == NULL)
+		current_directory();
+	for (; words[i] != NULL; i++)
+		list_dir(words[i],l, acc, link, reca, recb, hid);
+	
+}
+
+void cmd_delete(int word_num, char *words[])
+{
+	if (word_num == 1)
+		current_directory();
+	else
+	{
+		for(int i = 1; words[i] != NULL; i++)
+			delete(words[i]);
+	}
+}
+
+void cmd_deltree(int word_num, char *words[])
+{
+	if (word_num == 1)
+		current_directory();
+	else
+		for(int i = 1; words[i] != NULL; i++)
+			delete_dir(words[i]);
+}
+
