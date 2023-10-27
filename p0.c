@@ -87,8 +87,8 @@ int process_command(char *line, char * words[], t_list *hist, t_list *open_files
 
 void cmd_authors(int word_num, char * words[])
 {
-	char *authors_logins[2] = {"anahit.apresyan", "Selma"};
-	char *authors_names[2] = {"Anahit Apresyan", "Selma Surname"};
+	char *authors_logins[2] = {"anahit.apresyan", "selma.djozic"};
+	char *authors_names[2] = {"Anahit Apresyan", "Selma Djozic"};
 	if (word_num == 1)
 		for (int i = 0; i < 2; i++)
 			printf("%s: %s\n", authors_names[i], authors_logins[i]);
