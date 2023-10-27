@@ -162,7 +162,7 @@ void remove_top(t_list *list)
 
 }
 
-void destroy_list(t_list *list)
+void destroy_list(t_list *list, int file)
 {
     t_node *current = list->top;
     t_node *next;
@@ -170,13 +170,12 @@ void destroy_list(t_list *list)
     while (current != NULL)
     {
         next = current->next;
-        if ((t_file *)current->data)
+        if (file)
             free(((t_file *)current->data)->file_name);
         free(current->data);
         free(current);
         current = next;
     }
-
     free(list);
 }
 
