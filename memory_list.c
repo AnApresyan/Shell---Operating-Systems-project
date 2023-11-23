@@ -150,7 +150,7 @@ void print_mmap_blocks(mem_list *list)
 //print only those where type == 's', besides the above ones print the key printf(" (key %lu)", (long)tmp->key);
 void print_shared_blocks(mem_list *list)
 {
-
+printf("Anything");
 }
 
 //print only those where type == 'm'
