@@ -45,7 +45,7 @@ typedef struct m_block
 	void *addr;
 	size_t size;
 	char *time;
-	char type;
+	char type;				//malloc - 'm', shared - 's', mmap - 'p'	
 	key_t key;
 	char *file_name;
 	int fd;
@@ -108,8 +108,8 @@ void	remove_block(mem_list *list, size_t size, char type);
 void	print_mem_list(mem_list *list);
 char	*current_time();
 void	cmd_shared(int word_num, char *words[], mem_list *mem_blocks);
-void 	sharedCreate(char *words[], mem_list *mem_blocks);
-void	*getMemoryShmget(key_t key, size_t size, mem_list *mem_blocks);
+void 	shared_create(char *words[], mem_list *mem_blocks);
+void	*get_memory_shmget(key_t key, size_t size, mem_list *mem_blocks);
 void	shared_delkey(char *words[]);
 void	shared_free(char *words[], mem_list *list);
 void	insert_shared_block(mem_list *mem_blocks, void *p, size_t size, key_t key);
@@ -117,8 +117,6 @@ void	remove_shared_block(mem_list *list, key_t key);
 void	insert_mmap_block(mem_list *mem_blocks, void *p, size_t size, char *file, int fd);
 void	*map_file(char *file, int protection, mem_list *list);
 void	cmd_mmap(char *arg[], mem_list *list);
-void	free_mmap(char *words[], mem_list *list);
-// void 	remove_mmap_block(mem_block *block, mem_list *list);
 void	recursive(int n);
 void 	cmd_recurse(char *words[]);
 void 	fill_memory(void *p, size_t cont, unsigned char byte);
@@ -126,5 +124,8 @@ void 	*get_sharedmem_addr(key_t key, mem_list *list);
 void 	print_mmap_blocks(mem_list *list);
 void	print_shared_blocks(mem_list *list);
 void	print_malloc_blocks(mem_list *list);
+int		ft_munmap(char *file, size_t size);
+void	remove_mmap_block(char *file, mem_list *list);
+void	cmd_memfill(int word_num, char *words[]);
 
 #endif

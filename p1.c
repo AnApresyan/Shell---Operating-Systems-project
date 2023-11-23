@@ -91,6 +91,8 @@ int process_command(char *line, char * words[], t_list *hist, t_list *open_files
 			cmd_mmap(words, mem_blocks);
 		if (!strcmp(words[0], "recurse"))
 			cmd_recurse(words);
+		if (!strcmp(words[0], "memfill"))
+			cmd_memfill(word_num, words);
 	}
 	return 1;
 }

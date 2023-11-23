@@ -1,4 +1,4 @@
-NAME = p1
+NAME = p2
 SRCS = $(wildcard *.c)
 OBJS = ${SRCS:.c=.o}
 CC = gcc

@@ -36,14 +36,13 @@ void cmd_malloc(int word_num, char *words[], mem_list *mem_blocks)
         else
             printf("Invalid size\n");
         printf("\n");
-        print_mem_list(mem_blocks);
-        //print_malloc_blocks(mem_blocks);  //the ones that have type 'm'
+        print_malloc_blocks(mem_blocks);  //the ones that have type 'm'
         return;
     }
     printf("Memory blocks for process %d\n", getpid());
 }
 
-void *getMemoryShmget(key_t key, size_t size, mem_list *mem_blocks)
+void *get_memory_shmget(key_t key, size_t size, mem_list *mem_blocks)
 {
     void * p;
     int aux,id,flags=0777;
@@ -66,29 +65,24 @@ void *getMemoryShmget(key_t key, size_t size, mem_list *mem_blocks)
     insert_shared_block(mem_blocks, p, (size_t)size, key);
     return (p);
 }
-void sharedCreate(char *words[], mem_list *mem_blocks)
+void shared_create(char *words[], mem_list *mem_blocks)
 {
     key_t key;
     size_t size;
     void *p;
 
-    // printf("Creating shared memory\n");
     if (words[3]==NULL) {
-        print_mem_list(mem_blocks); //change later to print only the shared memory
+        print_shared_blocks(mem_blocks); //change later to print only the shared memory
         return;
     }
-    // printf("Not returned\n");
     key=(key_t)  strtoul(words[2],NULL,10);
     size=(size_t) strtoul(words[3],NULL,10);
     if (size == 0) {
         printf ("No 0-byte blocks allocated\n");
         return;
     }
-    if ((p = getMemoryShmget(key,size, mem_blocks)) != NULL)
-    {
+    if ((p = get_memory_shmget(key,size, mem_blocks)) != NULL)
         printf("Assigned %lu bytes in %p\n",(unsigned long) size, p);
-        print_mem_list(mem_blocks);             //remove later
-    }
     else
         printf("Unable to allocate shared memory with key %lu: %s\n", (unsigned long) key, strerror(errno));
 }
@@ -96,11 +90,11 @@ void sharedCreate(char *words[], mem_list *mem_blocks)
 void cmd_shared(int word_num, char *words[], mem_list *mem_blocks)
 {
     if (word_num < 3){
-        print_mem_list(mem_blocks); //change later to print only the shared memory
+        print_shared_blocks(mem_blocks);
         return;
     }
     if (!strcmp(words[1], "-create"))
-        sharedCreate(words, mem_blocks);
+        shared_create(words, mem_blocks);
     else if (!strcmp(words[1], "-free"))
         shared_free(words, mem_blocks);
     else if (!strcmp(words[1], "-delkey"))
@@ -151,34 +145,16 @@ void *map_file(char *file, int protection, mem_list *list)
     struct stat s;
     void *p;
 
-    printf("protection&PROT_WRITE %d\n", protection&PROT_WRITE);
     if (protection&PROT_WRITE)
         modo = O_RDWR;
-    printf("Modoooo %d\n", modo);
     if (stat(file, &s) == -1 || (df = open(file, modo)) == -1)
         return NULL;
-    printf("s.st_size %lld\n", s.st_size);
     if ((p = mmap (NULL, s.st_size, protection, map, df, 0)) == MAP_FAILED){
         close(df);
         return NULL;
     }
     insert_mmap_block(list, p, s.st_size, file, s.st_size);
     return p;
-}
-
-void free_mmap(char *words[], mem_list *list)
-{
-    // if (words[2] == NULL) {
-    //     print_mem_list(list);
-    //     return;
-    // }
-    // mem_block *tmp = 
-    // if (munmap(words[2], s.st_size) == -1) {
-    //     perror("Error unmapping file");
-    //     return;
-    // }
-    // printf("File unmapped sucessfully");
-    // remove_mmap_block(tmp, list);        //Don't forget to close it and deallocate the file name
 }
 
 void cmd_mmap(char *arg[], mem_list *list)
@@ -191,7 +167,7 @@ void cmd_mmap(char *arg[], mem_list *list)
         {print_mmap_blocks(list); return;}                   //print the mapped list
     if (!strcmp(arg[1], "-free"))
     {
-         free_mmap(arg, list);
+         remove_mmap_block(arg[2], list);
          return;
     }
     if ((perm = arg[2]) != NULL && strlen(perm) < 4) {
@@ -222,7 +198,7 @@ void recursive(int n)
   char automatico[TAMANO];
   static char estatico[TAMANO];
 
-  printf ("parametro:%3d(%p) array %p, arr estatico %p\n",n,&n,automatico, estatico);
+  printf ("Parameter:%3d(%p) array %p, arr static %p\n",n,&n,automatico, estatico);
 
   if (n>0)
     recursive(n-1);
@@ -230,9 +206,24 @@ void recursive(int n)
 
 void fill_memory(void *p, size_t cont, unsigned char byte)
 {
-  unsigned char *arr=(unsigned char *) p;
-  size_t i;
+    unsigned char *arr=(unsigned char *) p;
+    size_t i;
 
-  for (i=0; i<cont;i++)
-		arr[i]=byte;
+    for (i=0; i<cont;i++)
+        arr[i]=byte;
+    for (size_t i = 0; i < cont; ++i) {
+        printf("%c", (unsigned char)arr[i]);
+    }
+    printf("\n");
 }
+
+void cmd_memfill(int word_num, char *words[])
+{
+    if (word_num < 4)
+        return;
+    void *addr = (void *)strtoul(words[1], NULL, 16);
+    size_t cont = (size_t)strtoul(words[2], NULL, 10);
+    unsigned char byte = (unsigned char)strtoul(words[2], NULL, 10);
+    fill_memory(addr, cont, byte);
+}
+

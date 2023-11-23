@@ -52,10 +52,13 @@ void destroy_mem_list(mem_list *list)
     while (current != NULL)
     {
         next = current->next;
+        if (current->type == 'p') {
+            free(current->file_name);
+            close(current->fd);
+        }
         free(current);
         current = next;
     }
-
     list->top = NULL;
     free(list);
 }
@@ -115,7 +118,7 @@ void insert_shared_block(mem_list *mem_blocks, void *p, size_t size, key_t key)
 
 void insert_mmap_block(mem_list *mem_blocks, void *p, size_t size, char *file, int fd)
 {
-    if (insert_block(mem_blocks, p, size, 'm')) {
+    if (insert_block(mem_blocks, p, size, 'p')) {
         mem_blocks->top->file_name = strdup(file);      //free in the end
         mem_blocks->top->fd = fd;
     }
@@ -140,7 +143,7 @@ void print_mem_list(mem_list *list)
 
 //Go over all the blocks, print their size, add, type, time 
 
-//print only those where type == 'm', besides the above ones print the file and fd
+//print only those where type == 'p', besides the above ones print the file and fd
 void print_mmap_blocks(mem_list *list)            
 {
     printf("Printing mmap list\n");
@@ -173,6 +176,39 @@ void *get_sharedmem_addr(key_t key, mem_list *list)
     return NULL;
 }
 
-// void remove_mmap_block(char *file, mem_list *list) {
-    
-// }
+int ft_munmap(char *file, size_t size)
+{
+    if (munmap(file, size) == -1)
+    {
+        perror("Error unmapping file");
+        return 0;
+    }
+    return 1;
+}
+
+void remove_mmap_block(char *file, mem_list *list)
+{
+    mem_block *block;
+    mem_block *prev = NULL;
+
+    if (file != NULL)
+        return;
+    block = list->top;
+    while (block != NULL) {
+        if (block->type == 'p' && !strcmp(file, block->file_name)){
+            if (ft_munmap(file, block->size)) {
+                free(block->file_name);
+                close(block->fd);
+                if (!prev)
+                    list->top = block->next;
+                else
+                    prev->next = block->next;
+                free(block);
+                return;
+            }
+        }
+        prev = block;
+        block = block->next;
+    }
+    printf("No mmap block of that name in this process\n");
+}
