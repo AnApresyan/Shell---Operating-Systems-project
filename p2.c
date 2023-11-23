@@ -212,7 +212,7 @@ void fill_memory(void *p, size_t cont, unsigned char byte)
     for (i=0; i<cont;i++)
         arr[i]=byte;
     for (size_t i = 0; i < cont; ++i) {
-        printf("%c", (unsigned char)arr[i]);
+        printf("%c", arr[i]);
     }
     printf("\n");
 }
@@ -226,4 +226,3 @@ void cmd_memfill(int word_num, char *words[])
     unsigned char byte = (unsigned char)strtoul(words[2], NULL, 10);
     fill_memory(addr, cont, byte);
 }
-
