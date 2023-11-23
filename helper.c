@@ -1,147 +1,222 @@
-//helper code
+// /* lo que esta en comentarios con 2 * /** 
+// depende de las funciones que se hayan hecho para la lista **/
+// #include <stdio.h>
 
-// #include <unistd.h>
-// /*las funciones entre puntos hay que implementarlas */
+// #define TAMANO 2048
 
-// void Cmd_open (char * tr[])
+// void Recursiva (int n)
 // {
-//     int i,df, mode=0;
-    
-//     if (tr[0]==NULL) { /*no hay parametro*/
-//       // ..............ListarFicherosAbiertos...............
-//         return;
-//     }
-//     for (i=1; tr[i]!=NULL; i++)
-//       if (!strcmp(tr[i],"cr")) mode|=O_CREAT;
-//       else if (!strcmp(tr[i],"ex")) mode|=O_EXCL;
-//       else if (!strcmp(tr[i],"ro")) mode|=O_RDONLY; 
-//       else if (!strcmp(tr[i],"wo")) mode|=O_WRONLY;
-//       else if (!strcmp(tr[i],"rw")) mode|=O_RDWR;
-//       else if (!strcmp(tr[i],"ap")) mode|=O_APPEND;
-//       else if (!strcmp(tr[i],"tr")) mode|=O_TRUNC; 
-//       else break;
-      
-//     if ((df=open(tr[0],mode,0777))==-1)
-//         perror ("Imposible abrir fichero");
-//     else{
-//         //...........AnadirAFicherosAbiertos (descriptor...modo...nombre....)....
-//         printf ("Anadida entrada a la tabla ficheros abiertos..................",......);
+//   char automatico[TAMANO];
+//   static char estatico[TAMANO];
+
+//   printf ("parametro:%3d(%p) array %p, arr estatico %p\n",n,&n,automatico, estatico);
+
+//   if (n>0)
+//     Recursiva(n-1);
 // }
 
-// void Cmd_close (char *tr[])
-// { 
-//     int df;
-    
-//     if (tr[0]==NULL || (df=atoi(tr[0]))<0) { /*no hay parametro*/
-//       //..............ListarFicherosAbiertos............... /*o el descriptor es menor que 0*/
-//         return;
-//     }
 
-    
-//     if (close(df)==-1)
-//         perror("Inposible cerrar descriptor");
-//     //else'' ........EliminarDeFicherosAbiertos......
+// void LlenarMemoria (void *p, size_t cont, unsigned char byte)
+// {
+//   unsigned char *arr=(unsigned char *) p;
+//   size_t i;
+
+//   for (i=0; i<cont;i++)
+// 		arr[i]=byte;
 // }
 
-// void Cmd_dup (char * tr[])
-// { 
-//     int df, duplicado;
-//     char aux[MAXNAME],*p;
-    
-//     if (tr[0]==NULL || (df=atoi(tr[0]))<0) { /*no hay parametro*/
-//         ListOpenFiles(-1);                 /*o el descriptor es menor que 0*/
-//         return;
-//     }
-    
- 
-//     p=.....NombreFicheroDescriptor(df).......;
-//     sprintf (aux,"dup %d (%s)",df, p);
-//     .......AnadirAFicherosAbiertos......duplicado......aux.....fcntl(duplicado,F_GETFL).....;
-// } 
-
-
-// char LetraTF (mode_t m)
+// void * ObtenerMemoriaShmget (key_t clave, size_t tam)
 // {
-//      switch (m&S_IFMT) { /*and bit a bit con los bits de formato,0170000 */
-//         case S_IFSOCK: return 's'; /*socket */
-//         case S_IFLNK: return 'l'; /*symbolic link*/
-//         case S_IFREG: return '-'; /* fichero normal*/
-//         case S_IFBLK: return 'b'; /*block device*/
-//         case S_IFDIR: return 'd'; /*directorio */ 
-//         case S_IFCHR: return 'c'; /*char device*/
-//         case S_IFIFO: return 'p'; /*pipe*/
-//         default: return '?'; /*desconocido, no deberia aparecer*/
+//     void * p;
+//     int aux,id,flags=0777;
+//     struct shmid_ds s;
+
+//     if (tam)     /*tam distito de 0 indica crear */
+//         flags=flags | IPC_CREAT | IPC_EXCL;
+//     if (clave==IPC_PRIVATE)  /*no nos vale*/
+//         {errno=EINVAL; return NULL;}
+//     if ((id=shmget(clave, tam, flags))==-1)
+//         return (NULL);
+//     if ((p=shmat(id,NULL,0))==(void*) -1){
+//         aux=errno;
+//         if (tam)
+//              shmctl(id,IPC_RMID,NULL);
+//         errno=aux;
+//         return (NULL);
+//     }
+//     shmctl (id,IPC_STAT,&s);
+//  /** Guardar en la lista, p.e.  InsertarNodoShared (&L, p, s.shm_segsz, clave); */
+//     return (p);
+// }
+// void SharedCreate (char *tr[])
+// {
+//    key_t cl;
+//    size_t tam;
+//    void *p;
+
+//    if (tr[0]==NULL || tr[1]==NULL) {
+// 		/** ImprimirListaShared(&L); **/
+// 		return;
+//    }
+  
+//    cl=(key_t)  strtoul(tr[0],NULL,10);
+//    tam=(size_t) strtoul(tr[1],NULL,10);
+//    if (tam==0) {
+// 	printf ("No se asignan bloques de 0 bytes\n");
+// 	return;
+//    }
+//    if ((p=ObtenerMemoriaShmget(cl,tam))!=NULL)
+// 		printf ("Asignados %lu bytes en %p\n",(unsigned long) tam, p);
+//    else
+// 		printf ("Imposible asignar memoria compartida clave %lu:%s\n",(unsigned long) cl,strerror(errno));
+// }
+
+
+// void * MapearFichero (char * fichero, int protection)
+// {
+//     int df, map=MAP_PRIVATE,modo=O_RDONLY;
+//     struct stat s;
+//     void *p;
+
+//     if (protection&PROT_WRITE)
+//           modo=O_RDWR;
+//     if (stat(fichero,&s)==-1 || (df=open(fichero, modo))==-1)
+//           return NULL;
+//     if ((p=mmap (NULL,s.st_size, protection,map,df,0))==MAP_FAILED)
+//            return NULL;
+// /* Guardar en la lista    InsertarNodoMmap (&L,p, s.st_size,df,fichero); */
+//     return p;
+// }
+
+// void CmdMmap(char *arg[])
+// { 
+//      char *perm;
+//      void *p;
+//      int protection=0;
+     
+//      if (arg[0]==NULL)
+//             {ImprimirListaMmap(&L); return;}
+//      if ((perm=arg[1])!=NULL && strlen(perm)<4) {
+//             if (strchr(perm,'r')!=NULL) protection|=PROT_READ;
+//             if (strchr(perm,'w')!=NULL) protection|=PROT_WRITE;
+//             if (strchr(perm,'x')!=NULL) protection|=PROT_EXEC;
 //      }
+//      if ((p=MapearFichero(arg[0],protection))==NULL)
+//              perror ("Imposible mapear fichero");
+//      else
+//              printf ("fichero %s mapeado en %p\n", arg[0], p);
 // }
-// /*las siguientes funciones devuelven los permisos de un fichero en formato rwx----*/
-// /*a partir del campo st_mode de la estructura stat */
-// /*las tres son correctas pero usan distintas estrategias de asignaciÃ³n de memoria*/
 
-// char * ConvierteModo (mode_t m, char *permisos)
+// void SharedDelkey (char *args[])
 // {
-//     strcpy (permisos,"---------- ");
-    
-//     permisos[0]=LetraTF(m);
-//     if (m&S_IRUSR) permisos[1]='r';    /*propietario*/
-//     if (m&S_IWUSR) permisos[2]='w';
-//     if (m&S_IXUSR) permisos[3]='x';
-//     if (m&S_IRGRP) permisos[4]='r';    /*grupo*/
-//     if (m&S_IWGRP) permisos[5]='w';
-//     if (m&S_IXGRP) permisos[6]='x';
-//     if (m&S_IROTH) permisos[7]='r';    /*resto*/
-//     if (m&S_IWOTH) permisos[8]='w';
-//     if (m&S_IXOTH) permisos[9]='x';
-//     if (m&S_ISUID) permisos[3]='s';    /*setuid, setgid y stickybit*/
-//     if (m&S_ISGID) permisos[6]='s';
-//     if (m&S_ISVTX) permisos[9]='t';
-    
-//     return permisos;
+//    key_t clave;
+//    int id;
+//    char *key=args[0];
+
+//    if (key==NULL || (clave=(key_t) strtoul(key,NULL,10))==IPC_PRIVATE){
+//         printf ("      delkey necesita clave_valida\n");
+//         return;
+//    }
+//    if ((id=shmget(clave,0,0666))==-1){
+//         perror ("shmget: imposible obtener memoria compartida");
+//         return;
+//    }
+//    if (shmctl(id,IPC_RMID,NULL)==-1)
+//         perror ("shmctl: imposible eliminar id de memoria compartida\n");
 // }
 
 
-// char * ConvierteModo2 (mode_t m)
+// ssize_t EscribirFichero (char *f, void *p, size_t cont,int overwrite)
 // {
-//     static char permisos[12];
-//     strcpy (permisos,"---------- ");
-    
-//     permisos[0]=LetraTF(m);
-//     if (m&S_IRUSR) permisos[1]='r';    /*propietario*/
-//     if (m&S_IWUSR) permisos[2]='w';
-//     if (m&S_IXUSR) permisos[3]='x';
-//     if (m&S_IRGRP) permisos[4]='r';    /*grupo*/
-//     if (m&S_IWGRP) permisos[5]='w';
-//     if (m&S_IXGRP) permisos[6]='x';
-//     if (m&S_IROTH) permisos[7]='r';    /*resto*/
-//     if (m&S_IWOTH) permisos[8]='w';
-//     if (m&S_IXOTH) permisos[9]='x';
-//     if (m&S_ISUID) permisos[3]='s';    /*setuid, setgid y stickybit*/
-//     if (m&S_ISGID) permisos[6]='s';
-//     if (m&S_ISVTX) permisos[9]='t';
-    
-//     return permisos;
+//    ssize_t  n;
+//    int df,aux, flags=O_CREAT | O_EXCL | O_WRONLY;
+
+//    if (overwrite)
+// 	flags=O_CREAT | O_WRONLY | O_TRUNC;
+
+//    if ((df=open(f,flags,0777))==-1)
+// 	return -1;
+
+//    if ((n=write(df,p,cont))==-1){
+// 	aux=errno;
+// 	close(df);
+// 	errno=aux;
+// 	return -1;
+//    }
+//    close (df);
+//    return n;
 // }
 
-// char * ConvierteModo3 (mode_t m)
+// ssize_t LeerFichero (char *f, void *p, size_t cont)
 // {
-//     char *permisos;
+//    struct stat s;
+//    ssize_t  n;  
+//    int df,aux;
 
-//     if ((permisos=(char *) malloc (12))==NULL)
-//         return NULL;
-//     strcpy (permisos,"---------- ");
-    
-//     permisos[0]=LetraTF(m);
-//     if (m&S_IRUSR) permisos[1]='r';    /*propietario*/
-//     if (m&S_IWUSR) permisos[2]='w';
-//     if (m&S_IXUSR) permisos[3]='x';
-//     if (m&S_IRGRP) permisos[4]='r';    /*grupo*/
-//     if (m&S_IWGRP) permisos[5]='w';
-//     if (m&S_IXGRP) permisos[6]='x';
-//     if (m&S_IROTH) permisos[7]='r';    /*resto*/
-//     if (m&S_IWOTH) permisos[8]='w';
-//     if (m&S_IXOTH) permisos[9]='x';
-//     if (m&S_ISUID) permisos[3]='s';    /*setuid, setgid y stickybit*/
-//     if (m&S_ISGID) permisos[6]='s';
-//     if (m&S_ISVTX) permisos[9]='t';
-    
-//     return permisos;
-// } 
+//    if (stat (f,&s)==-1 || (df=open(f,O_RDONLY))==-1)
+// 	return -1;     
+//    if (cont==-1)   /* si pasamos -1 como bytes a leer lo leemos entero*/
+// 	cont=s.st_size;
+//    if ((n=read(df,p,cont))==-1){
+// 	aux=errno;
+// 	close(df);
+// 	errno=aux;
+// 	return -1;
+//    }
+//    close (df);
+//    return n;
+// }
+
+// void CmdRead (char *ar[])
+// {
+//    void *p;
+//    size_t cont=-1;  /* -1 indica leer todo el fichero*/
+//    ssize_t n;
+//    if (ar[0]==NULL || ar[1]==NULL){
+// 	printf ("faltan parametros\n");
+// 	return;
+//    }
+//    p=cadtop(ar[1]);  /*convertimos de cadena a puntero*/
+//    if (ar[2]!=NULL)
+// 	cont=(size_t) atoll(ar[2]);
+
+//    if ((n=LeerFichero(ar[0],p,cont))==-1)
+// 	perror ("Imposible leer fichero");
+//    else
+// 	printf ("leidos %lld bytes de %s en %p\n",(long long) n,ar[0],p);
+// }
+
+
+
+
+
+// void Do_MemPmap (void) /*sin argumentos*/
+//  { pid_t pid;       /*hace el pmap (o equivalente) del proceso actual*/
+//    char elpid[32];
+//    char *argv[4]={"pmap",elpid,NULL};
+   
+//    sprintf (elpid,"%d", (int) getpid());
+//    if ((pid=fork())==-1){
+//       perror ("Imposible crear proceso");
+//       return;
+//       }
+//    if (pid==0){ /*proceso hijo*/
+//       if (execvp(argv[0],argv)==-1)
+//          perror("cannot execute pmap (linux, solaris)");
+      
+//       argv[0]="vmmap"; argv[1]="-interleave"; argv[2]=elpid;argv[3]=NULL;
+//       if (execvp(argv[0],argv)==-1) /*probamos vmmap Mac-OS*/
+//          perror("cannot execute vmmap (Mac-OS)");          
+      
+//       argv[0]="procstat"; argv[1]="vm"; argv[2]=elpid; argv[3]=NULL;   
+//       if (execvp(argv[0],argv)==-1)/*No hay pmap, probamos procstat FreeBSD */
+//          perror("cannot execute procstat (FreeBSD)");
+         
+//       argv[0]="procmap",argv[1]=elpid;argv[2]=NULL;    
+//             if (execvp(argv[0],argv)==-1)  /*probamos procmap OpenBSD*/
+//          perror("cannot execute procmap (OpenBSD)");
+         
+//       exit(1);
+//   }
+//   waitpid (pid,NULL,0);
+// }

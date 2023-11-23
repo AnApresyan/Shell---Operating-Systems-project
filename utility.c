@@ -9,9 +9,8 @@ int ft_perror(char *str, int ret)
 int is_fd_open(int fd) {
 	int flags = fcntl(fd, F_GETFL);
 	if (flags == -1) {
-		// Error occurred, handle it accordingly
 		perror("fcntl");
-		return -1; // Or any other error code
+		return -1;
 	}
 
 	// Check if the file descriptor is open for reading or writing
@@ -151,14 +150,16 @@ void stat_flags(int *l, int *acc, int *link, char *word)
 
 void delete(char *file)
 {
-	char *dir = dirname(file);
-	if (!access(dir, W_OK))
-	{
+	// char *dir = dirname(file);
+	// if (!access(dir, W_OK))
+	// {
 		if (remove(file) == -1)
-			printf("File/directory named - %s - not deleted\n", file); // check errno say why
-	}
-	else
-		printf("Deletetion of - %s - failed due to permission issues\n", file);
+			printf("File/directory named - %s - NOT deleted\n", file); // check errno say why
+		else
+			printf("File/directory named - %s - deleted successfully\n", file);
+	// }
+	// else
+	// 	printf("Deletetion of - %s - failed due to permission issues\n", file);
 }
 
 void list_dir(char * dir_name, int l, int acc, int link, int reca, int recb, int hid)
@@ -188,21 +189,22 @@ void list_dir(char * dir_name, int l, int acc, int link, int reca, int recb, int
 			else
 				perror("lstat");
 		}
+		closedir(dir);
 	}
 
 	if (recb)
 		list_files(dir_name, l, acc, link, hid);
-	closedir(dir);
+
 }
 
 void list_files(char *dir_name, int l, int acc, int link, int hid)
 {
 	DIR *dir;
 	struct dirent *entry;
-	printf("\nDIRECTORY ------ %s ------\n", dir_name);
 	// stat_helper(dir_name, l, acc, link);
 	if ((dir = opendir(dir_name)) != NULL)
 	{
+		printf("\nDIRECTORY ------ %s ------\n", dir_name);
 		while ((entry = readdir(dir)) != NULL)
 		{
 			if (!strncmp(entry->d_name, ".", 1) && !hid)
@@ -211,10 +213,10 @@ void list_files(char *dir_name, int l, int acc, int link, int hid)
 			sprintf(full_name, "%s/%s", dir_name, entry->d_name);
 			stat_helper(full_name, l, acc, link);
 		}
+		closedir(dir);
 	}
 	else
 		stat_helper(dir_name, l, acc, link);
-	closedir(dir);
 }
 
 void delete_dir(char * dir_name)
@@ -255,4 +257,19 @@ char *get_file_name(char *path)
         return file_name + 1;
     else
         return path;
+}
+
+char *current_time() {
+	time_t current_time;
+    time(&current_time);
+
+    // Format the time
+    struct tm *time_info;
+    static char time_str[20]; // Adjust the size as needed
+
+    time_info = localtime(&current_time);
+    strftime(time_str, sizeof(time_str), "%b %d %H:%M", time_info);
+
+    // Print the formatted time
+   return time_str;
 }

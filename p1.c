@@ -1,7 +1,7 @@
 #include "shell.h"
 
 //Authors: Anahit Apresyan - anahit.apresyan
-//		  Salma
+//		   Selma Djozic - selma.djozic
 
 int main(int argc, char **argv)
 {
@@ -9,6 +9,7 @@ int main(int argc, char **argv)
 	char *words[MAXLINE/2];
 	t_list *hist = create_list();
 	t_list *open_files = create_list();
+	mem_list *mem_blocks = create_mem_list();
 
 	if (!hist || !open_files)
 		return -1;
@@ -28,18 +29,19 @@ int main(int argc, char **argv)
 			perror("exit\n");
 			return (EXIT_FAILURE);
 		}
-		if (process_command(line, words, hist, open_files) == 0)
+		insert_element(hist, strdup(line));
+		if (process_command(line, words, hist, open_files, mem_blocks) == 0)
 			break;
 	}
 	destroy_list(hist, 0);
 	destroy_list(open_files, 1);
+	destroy_mem_list(mem_blocks);
 	return (EXIT_SUCCESS);
 }
 
-int process_command(char *line, char * words[], t_list *hist, t_list *open_files)
+int process_command(char *line, char * words[], t_list *hist, t_list *open_files, mem_list *mem_blocks)
 {
 	// printf("LINEEEE: %s", line);
-	insert_element(hist, strdup(line));
 	int word_num = TrocearCadena(line, words);
 
 	if (word_num > 0){
@@ -56,7 +58,7 @@ int process_command(char *line, char * words[], t_list *hist, t_list *open_files
 		if (!strcmp(words[0],"hist"))
 			cmd_hist(word_num, words, hist);
 		if (!strcmp(words[0],"command"))
-			 cmd_command(word_num, words, hist, open_files);
+			 cmd_command(word_num, words, hist, open_files, mem_blocks);
 		if (!strcmp(words[0], "open"))
 			 cmd_open(word_num, words, open_files);
 		if (!strcmp(words[0], "close"))
@@ -81,6 +83,14 @@ int process_command(char *line, char * words[], t_list *hist, t_list *open_files
 			cmd_delete(word_num, words);
 		if (!strcmp(words[0], "deltree"))
 			cmd_deltree(word_num, words);
+		if (!strcmp(words[0], "malloc"))
+			cmd_malloc(word_num, words, mem_blocks);
+		if (!strcmp(words[0], "shared"))
+			cmd_shared(word_num, words, mem_blocks);
+		if (!strcmp(words[0], "mmap"))
+			cmd_mmap(words, mem_blocks);
+		if (!strcmp(words[0], "recurse"))
+			cmd_recurse(words);
 	}
 	return 1;
 }
@@ -164,24 +174,53 @@ void cmd_hist(int word_num, char *words[], t_list *hist)
 	}
 }
 
-void cmd_command(int word_num, char *words[], t_list *hist, t_list *open_files)
+void cmd_command(int word_num, char *words[], t_list *hist, t_list *open_files, mem_list *mem_blocks)
 {
 	
 	int i = 1;
 	long n = 0;
 	t_node *node = hist->top;
 
-	
 	if (word_num > 1)
 		n = strtol(words[1], NULL, 10);
-	if (n > 0 && node)
+	if (n > 0 && node != NULL)
 	{
-		while (i++ != n && node->next)
+		// printf("Node info %s\n", (char *)node->data);
+		// if (node->next != NULL)
+		// 	printf("Node has next\n");
+		while (i++ != n && node->next != NULL)
+		{
+			// printf("in command - %d: %s\n", i - 1, (char *)node->data);
 			node = node->next;
-		char * line = strdup(node->data);
+		}
+		// printf("in command - %d: %s\n", i - 1, (char *)node->data);
+
+		// printf("i: %d\nn: %ld\n", i, n);
+		if (i != n + 1 || (i== n+1 && node->next == NULL))
+			return;
+		char *aux_words[MAXNAME];
+		char *aux = strdup((char*)node->data);
+		int aux_num = TrocearCadena(aux, aux_words);
+		if (aux && word_num == aux_num)
+		{
+			int j = 0;
+			for(j = 0; j < word_num; j++)
+				if (strcmp(words[j], aux_words[j]))
+					break;
+			if (j == word_num)
+			{
+				printf("You are trying to create a recursion:D\n");
+				free(aux);
+				return;
+			}
+		}
+		if (aux)
+			free(aux);
+		char *line = strdup((char *)node->data);
+
 		if (line != NULL)
 		{
-			process_command(line, words, hist, open_files);
+			process_command(line, words, hist, open_files, mem_blocks);
 			free(line);
 		}
 		else
@@ -408,7 +447,7 @@ void cmd_list(int word_num, char *words[])
 	if (words[i] == NULL)
 		current_directory();
 	for (; words[i] != NULL; i++)
-		list_dir(words[i],l, acc, link, reca, recb, hid);
+		list_dir(words[i], l, acc, link, reca, recb, hid);
 	
 }
 

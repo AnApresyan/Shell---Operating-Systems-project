@@ -15,8 +15,12 @@
 # include "grp.h"
 # include "dirent.h"
 # include <libgen.h>
+# include <sys/ipc.h>
+# include <sys/shm.h>
+# include <sys/mman.h>
 # define MAXLINE 2048
 # define MAXNAME 2048
+# define TAMANO 2048
 
 typedef struct s_node
 {
@@ -35,6 +39,25 @@ typedef struct s_file
 	char	*file_name;
 }	t_file;
 
+
+typedef struct m_block
+{
+	void *addr;
+	size_t size;
+	char *time;
+	char type;
+	key_t key;
+	char *file_name;
+	int fd;
+	struct m_block *next;
+} mem_block;
+
+typedef struct m_list
+{
+	mem_block *top;
+}	mem_list;
+
+
 int		TrocearCadena(char * str,   char * words[]);
 int     ft_perror(char *str, int ret);
 t_node  *create_node(void *data);
@@ -48,13 +71,13 @@ void	remove_top(t_list *list);
 void	destroy_list(t_list *list, int str);
 int		is_fd_open(int fd);
 t_file	*new_tfile(int fd, char *file_name);
-int 	process_command(char *line, char *words[], t_list *hist, t_list *open_files);
+int 	process_command(char *line, char *words[], t_list *hist, t_list *open_files, mem_list *mem_blocks);
 void	cmd_authors(int word_num, char * words[]);
 void	cmd_pid(int word_num, char *words[]);
 void	cmd_chdir(int word_num, char *words[]);
 void	cmd_date_time(int word_num, char *words[]);
 void	cmd_hist(int word_num, char *words[], t_list *hist);
-void 	cmd_command(int word_num, char *words[], t_list *hist, t_list *open_files);
+void 	cmd_command(int word_num, char *words[], t_list *hist, t_list *open_files, mem_list *mem_blocks);
 void	cmd_open (int word_num, char * words[], t_list *open_files);
 void	cmd_close (int word_num, char * words[], t_list *open_files);
 void 	cmd_listopen(int word_num, char *words[], t_list *open_files);
@@ -76,5 +99,32 @@ void	cmd_deltree(int word_num, char *words[]);
 void	list_dir(char * dir_name, int l, int acc, int link,int reca, int recb, int hid);
 char	*get_file_name(char *path);
 void 	list_files(char *dir_name, int l, int acc, int link, int hid);
+void	*create_mem_list();
+mem_block *create_block(void *addr, size_t size, char type_alloc);
+int 	insert_block(mem_list *list, void *addr, size_t size, char type_alloc);
+void 	destroy_mem_list(mem_list *list);
+void	cmd_malloc(int word_num, char *words[], mem_list *mem_blocks);
+void	remove_block(mem_list *list, size_t size, char type);
+void	print_mem_list(mem_list *list);
+char	*current_time();
+void	cmd_shared(int word_num, char *words[], mem_list *mem_blocks);
+void 	sharedCreate(char *words[], mem_list *mem_blocks);
+void	*getMemoryShmget(key_t key, size_t size, mem_list *mem_blocks);
+void	shared_delkey(char *words[]);
+void	shared_free(char *words[], mem_list *list);
+void	insert_shared_block(mem_list *mem_blocks, void *p, size_t size, key_t key);
+void	remove_shared_block(mem_list *list, key_t key);
+void	insert_mmap_block(mem_list *mem_blocks, void *p, size_t size, char *file, int fd);
+void	*map_file(char *file, int protection, mem_list *list);
+void	cmd_mmap(char *arg[], mem_list *list);
+void	free_mmap(char *words[], mem_list *list);
+// void 	remove_mmap_block(mem_block *block, mem_list *list);
+void	recursive(int n);
+void 	cmd_recurse(char *words[]);
+void 	fill_memory(void *p, size_t cont, unsigned char byte);
+void 	*get_sharedmem_addr(key_t key, mem_list *list);
+void 	print_mmap_blocks(mem_list *list);
+void	print_shared_blocks(mem_list *list);
+void	print_malloc_blocks(mem_list *list);
 
 #endif
