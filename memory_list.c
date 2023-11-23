@@ -141,25 +141,60 @@ void print_mem_list(mem_list *list)
 }
 
 
-//Go over all the blocks, print their size, add, type, time 
+//Go over all the blocks, print their size, address, time 
 
 //print only those where type == 'p', besides the above ones print the file and fd
 void print_mmap_blocks(mem_list *list)            
 {
-    printf("Printing mmap list\n");
+    printf("Printing mmap list:\n");
+    printf("Memory blocks assigned by process %lu\n", (long)getpid());
+    if (list == NULL)
+        return;
+    mem_block *tmp = list->top; 
+    while (tmp != NULL)
+    {
+        //tmp->type == 'p'
+        if (tmp->type == 'p') {
+            printf("%zu bytes at address %p, on %s, with the file name:%s, and the file directory:%d\n",
+            tmp->size, tmp->addr, tmp->time, tmp->file_name, tmp->fd);
+
+        }
+        tmp = tmp->next;
+    }
 }
 
 
 //print only those where type == 's', besides the above ones print the key printf(" (key %lu)", (long)tmp->key);
 void print_shared_blocks(mem_list *list)
 {
-    printf("Anything");
+printf("Printing shared list:\n");
+    printf("Memory blocks assigned by process %lu\n", (long)getpid());
+    if (list == NULL)
+        return;
+    mem_block *tmp = list->top; 
+    while (tmp != NULL)
+    {
+        //tmp->type == 's'
+        if (tmp->type == 's')
+            printf("%zu bytes at address %p, on %s, with the key : %lu\n", tmp->size, tmp->addr, tmp->time, (long)tmp->key);
+        tmp = tmp->next;
+    }
 }
 
 //print only those where type == 'm'
 void print_malloc_blocks(mem_list *list)
 {
-
+    printf("Printing malloc list\n"); //tmp->type=='m'
+    printf("Memory blocks assigned by process %lu\n", (long)getpid());
+    if (list == NULL)
+        return;
+    mem_block *tmp = list->top; 
+    while (tmp != NULL)
+    {
+        if (tmp->type == 'm')
+            printf("%zu bytes at address %p, on %s\n", tmp->size, tmp->addr, tmp->time);
+        tmp = tmp->next;
+    }
 }
 
 void *get_sharedmem_addr(key_t key, mem_list *list)
