@@ -3,3 +3,4 @@ hints
 *.o
 p1
 .DS_Store
+helper.c

@@ -124,8 +124,17 @@ void 	*get_sharedmem_addr(key_t key, mem_list *list);
 void 	print_mmap_blocks(mem_list *list);
 void	print_shared_blocks(mem_list *list);
 void	print_malloc_blocks(mem_list *list);
-int		ft_munmap(char *file, size_t size);
+int		ft_munmap(void *addr, size_t size);
 void	remove_mmap_block(char *file, mem_list *list);
 void	cmd_memfill(int word_num, char *words[]);
+void	cmd_memdump(int word_num, char *words[]);
+void	cmd_read(char *words[]);
+ssize_t read_file(char *f, void *p, size_t cont);
+void 	cmd_write(int word_num, char *words[]);
+ssize_t write_file(char *f, void *p, size_t cont, int overwrite);
+void	do_mem_pmap(void);
+void	cmd_mem(char *words[], mem_list *list);
+void	print_vars();
+void 	print_functions();
 
 #endif

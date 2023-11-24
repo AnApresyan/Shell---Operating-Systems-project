@@ -3,42 +3,6 @@
 //Authors: Anahit Apresyan - anahit.apresyan
 //		   Selma Djozic - selma.djozic
 
-int main(int argc, char **argv)
-{
-	char line[MAXLINE];
-	char *words[MAXLINE/2];
-	t_list *hist = create_list();
-	t_list *open_files = create_list();
-	mem_list *mem_blocks = create_mem_list();
-
-	if (!hist || !open_files)
-		return -1;
-
-	if (is_fd_open(0))
-		insert_open_file(open_files, new_tfile(0, "Standard input"));
-	if (is_fd_open(1))
-		insert_open_file(open_files, new_tfile(1, "Standard output"));
-	if (is_fd_open(2))
-		insert_open_file(open_files, new_tfile(2, "Standard error"));
-	
-	while (1)
-	{
-		printf("\001\033[1;35m\002Shell> \001\033[1;0m\002");
-		if (!fgets(line, sizeof(line), stdin))
-		{
-			perror("exit\n");
-			return (EXIT_FAILURE);
-		}
-		insert_element(hist, strdup(line));
-		if (process_command(line, words, hist, open_files, mem_blocks) == 0)
-			break;
-	}
-	destroy_list(hist, 0);
-	destroy_list(open_files, 1);
-	destroy_mem_list(mem_blocks);
-	return (EXIT_SUCCESS);
-}
-
 int process_command(char *line, char * words[], t_list *hist, t_list *open_files, mem_list *mem_blocks)
 {
 	// printf("LINEEEE: %s", line);
@@ -93,6 +57,14 @@ int process_command(char *line, char * words[], t_list *hist, t_list *open_files
 			cmd_recurse(words);
 		if (!strcmp(words[0], "memfill"))
 			cmd_memfill(word_num, words);
+		if (!strcmp(words[0], "memdump"))
+			cmd_memdump(word_num, words);
+		if (!strcmp(words[0], "read"))
+			cmd_read(words);
+		if (!strcmp(words[0], "write"))
+			cmd_write(word_num, words);
+		if (!strcmp(words[0], "mem"))
+			cmd_mem(words, mem_blocks);
 	}
 	return 1;
 }
@@ -232,10 +204,10 @@ void cmd_command(int word_num, char *words[], t_list *hist, t_list *open_files, 
 
 void cmd_open (int word_num, char * words[], t_list *open_files)
 {
-    int df, mode=0;
-    
-    if (word_num == 1) { /*no hay parametro*/
-    //    ..............ListarFicherosAbiertos...............
+	int df, mode=0;
+	
+	if (word_num == 1) { /*no hay parametro*/
+	//    ..............ListarFicherosAbiertos...............
 		// t_node *tmp = open_files->top;
 		// while (tmp != NULL)
 		// {
@@ -247,10 +219,10 @@ void cmd_open (int word_num, char * words[], t_list *open_files)
 		// 	}
 		// }
 		cmd_listopen(word_num, words, open_files);
-        return;
-    }
+		return;
+	}
 
-    for (int i=2; words[i]!=NULL; i++)
+	for (int i=2; words[i]!=NULL; i++)
 	{
 		// printf("in the for loop\n");
 		if (!strcmp(words[i],"cr")) mode|=	O_CREAT;
@@ -262,22 +234,22 @@ void cmd_open (int word_num, char * words[], t_list *open_files)
 		else if (!strcmp(words[i],"tr")) mode|=O_TRUNC; 
 		else break;
 	}
-    
+	
 	// printf("The mode is: %d\n", mode);
-    if ((df=open(words[1],mode,0777))==-1)
-        perror ("Impossible to open the file");
-    else
+	if ((df=open(words[1],mode,0777))==-1)
+		perror ("Impossible to open the file");
+	else
 	{
 		printf("File %s open with file descriptor %d\n", words[1], df);
 		insert_element(open_files, new_tfile(df, words[1]));
 	}
-        // ...........AnadirAFicherosAbiertos (descriptor...modo...nombre....)....
-        // printf ("Anadida entrada a la tabla ficheros abiertos..................",......);
+		// ...........AnadirAFicherosAbiertos (descriptor...modo...nombre....)....
+		// printf ("Anadida entrada a la tabla ficheros abiertos..................",......);
 }
 
 void cmd_close (int word_num, char * words[], t_list *open_files)
 { 
-    int df;
+	int df;
 	errno = 0;
 
 	if (word_num > 1)
@@ -288,9 +260,9 @@ void cmd_close (int word_num, char * words[], t_list *open_files)
 		return;
 	}
 	// printf("About to try to close file descriptor %d\n", df);
-    if (close(df)==-1)
-        perror("Impossible to close the descriptor");
-    else
+	if (close(df)==-1)
+		perror("Impossible to close the descriptor");
+	else
 	{
 		printf("File descriptor %d closed\n", df);
 		remove_open_file(open_files, df);
@@ -338,7 +310,7 @@ void cmd_listopen(int word_num, char *words[], t_list *open_files)
 			if (flags == -1) {
 				perror("fcntl");
 				return;
-    		}
+			}
 			int fl = flags & O_ACCMODE;
 			if (fl == O_RDONLY)
 				printf("descriptor: %d: %s %s\n", file->fd, file->file_name, "O_RDONLY");
@@ -362,11 +334,11 @@ void cmd_infosys()
 {
 	struct utsname systemInfo;
 
-    if (uname(&systemInfo) != 0) {
-        perror("uname");
+	if (uname(&systemInfo) != 0) {
+		perror("uname");
 		return;
-    }
-    printf("%s %s %s %s\n", systemInfo.nodename, systemInfo.sysname, systemInfo.release, systemInfo.version);
+	}
+	printf("%s %s %s %s\n", systemInfo.nodename, systemInfo.sysname, systemInfo.release, systemInfo.version);
 }
 
 void cmd_create(int word_num, char *words[])
