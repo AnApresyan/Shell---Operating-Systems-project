@@ -79,7 +79,7 @@ void remove_block(mem_list *list, size_t size, char type)
 		tmp = tmp->next;
 	}
 	if (tmp == NULL)
-		printf("No memory block of size %zu assigned by %c\n", size, type);
+		printf("No memory block of size %lu assigned by %c\n", (unsigned long)size, type);
 	else
 	{
 		if (!prev)
@@ -106,7 +106,7 @@ void remove_shared_block(mem_list *list, key_t key)
 		tmp = tmp->next;
 	}
 	if (tmp == NULL)
-		printf("No shared memory block with key %lu\n", (long)key);
+		printf("No shared memory block with key %lu\n", (unsigned long)key);
 	else {
 		if (!prev)
 			list->top = tmp->next;
@@ -140,11 +140,11 @@ void print_mem_list(mem_list *list)
 	mem_block *tmp = list->top; 
 	while (tmp != NULL)
 	{
-		printf("%16p %10zu on %s", tmp->addr, tmp->size, tmp->time);
+		printf("%16p %10lu on %s", tmp->addr, (unsigned long)tmp->size, tmp->time);
 		if (tmp->type == 'm')
 			printf(" malloc");
 		if (tmp->type == 's')
-			printf(" shared (key %lu)", (long)tmp->key);
+			printf(" shared (key %lu)", (unsigned long)tmp->key);
 		if (tmp->type == 'p')
 			printf(" %s (descriptor %d)", tmp->file_name, tmp->fd);
 		printf("\n");
@@ -167,7 +167,7 @@ void print_mmap_blocks(mem_list *list)
 	{
 		//tmp->type == 'p'
 		if (tmp->type == 'p') {
-			printf("%16p %10zu on %s", tmp->addr, tmp->size, tmp->time);
+			printf("%16p %10lu on %s", tmp->addr, (unsigned long)tmp->size, tmp->time);
 			printf(" %s (descriptor %d)\n", tmp->file_name, tmp->fd);
 		}
 		tmp = tmp->next;
@@ -188,8 +188,8 @@ void print_shared_blocks(mem_list *list)
 		//tmp->type == 's'
 		if (tmp->type == 's')
 		{
-			printf("%16p %10zu on %s", tmp->addr, tmp->size, tmp->time);
-			printf(" shared (key %lu)\n", (long)tmp->key);
+			printf("%16p %10lu on %s", tmp->addr, (unsigned long)tmp->size, tmp->time);
+			printf(" shared (key %lu)\n", (unsigned long)tmp->key);
 		}
 		tmp = tmp->next;
 	}
@@ -206,7 +206,7 @@ void print_malloc_blocks(mem_list *list)
 	while (tmp != NULL)
 	{
 		if (tmp->type == 'm')
-			printf("%16p %10zu on %s\n", tmp->addr, tmp->size, tmp->time);
+			printf("%16p %10lu on %s\n", tmp->addr, (unsigned long)tmp->size, tmp->time);
 		tmp = tmp->next;
 	}
 }
