@@ -3,7 +3,7 @@
 //Authors: Anahit Apresyan - anahit.apresyan
 //		   Selma Djozic - selma.djozic
 
-int process_command(char *line, char * words[], t_list *hist, t_list *open_files, mem_list *mem_blocks)
+int process_command(char *line, char * words[], t_list *hist, t_list *open_files, mem_list *mem_blocks, char **env)
 {
 	// printf("LINEEEE: %s", line);
 	int word_num = TrocearCadena(line, words);
@@ -11,60 +11,80 @@ int process_command(char *line, char * words[], t_list *hist, t_list *open_files
 	if (word_num > 0){
 		if (!strcmp(words[0], "authors"))
 			cmd_authors(word_num, words);
-		if (!strcmp(words[0],"pid"))
+		else if (!strcmp(words[0],"pid"))
 			cmd_pid(word_num, words);
-		if (!strcmp(words[0],"chdir"))
+		else if (!strcmp(words[0],"chdir"))
 			cmd_chdir(word_num, words);
-		if (!strcmp(words[0],"date"))
+		else if (!strcmp(words[0],"date"))
 			cmd_date_time(word_num, words);
-		if (!strcmp(words[0],"time"))
+		else if (!strcmp(words[0],"time"))
 			cmd_date_time(word_num, words);
-		if (!strcmp(words[0],"hist"))
+		else if (!strcmp(words[0],"hist"))
 			cmd_hist(word_num, words, hist);
-		if (!strcmp(words[0],"command"))
-			 cmd_command(word_num, words, hist, open_files, mem_blocks);
-		if (!strcmp(words[0], "open"))
+		else if (!strcmp(words[0],"command"))
+			 cmd_command(word_num, words, hist, open_files, mem_blocks, env);
+		else if (!strcmp(words[0], "open"))
 			 cmd_open(word_num, words, open_files);
-		if (!strcmp(words[0], "close"))
+		else if (!strcmp(words[0], "close"))
 			 cmd_close(word_num, words, open_files);
-		if (!strcmp(words[0],"dup"))
+		else if (!strcmp(words[0],"dup"))
 			 cmd_dup(word_num, words, open_files);
-		if (!strcmp(words[0], "listopen"))
+		else if (!strcmp(words[0], "listopen"))
 			 cmd_listopen(word_num, words, open_files);
-		if (!strcmp(words[0],"infosys"))
+		else if (!strcmp(words[0],"infosys"))
 			 cmd_infosys();
-		// if (!strcmp(words[0],"help"))
-		//	 cmd_help(word_num, words);
-		if (!strcmp(words[0],"quit") || !strcmp(words[0],"exit") || !strcmp(words[0],"bye"))
+		else if (!strcmp(words[0],"quit") || !strcmp(words[0],"exit") || !strcmp(words[0],"bye"))
 			return (0);
-		if (!strcmp(words[0], "create"))
+		else if (!strcmp(words[0], "create"))
 			cmd_create(word_num, words);
-		if (!strcmp(words[0], "stat"))
+		else if (!strcmp(words[0], "stat"))
 			cmd_stat(word_num, words);
-		if (!strcmp(words[0], "list"))
+		else if (!strcmp(words[0], "list"))
 			cmd_list(word_num, words);
-		if (!strcmp(words[0], "delete"))
+		else if (!strcmp(words[0], "delete"))
 			cmd_delete(word_num, words);
-		if (!strcmp(words[0], "deltree"))
+		else if (!strcmp(words[0], "deltree"))
 			cmd_deltree(word_num, words);
-		if (!strcmp(words[0], "malloc"))
+		else if (!strcmp(words[0], "malloc"))
 			cmd_malloc(word_num, words, mem_blocks);
-		if (!strcmp(words[0], "shared"))
+		else if (!strcmp(words[0], "shared"))
 			cmd_shared(word_num, words, mem_blocks);
-		if (!strcmp(words[0], "mmap"))
+		else if (!strcmp(words[0], "mmap"))
 			cmd_mmap(words, mem_blocks);
-		if (!strcmp(words[0], "recurse"))
+		else if (!strcmp(words[0], "recurse"))
 			cmd_recurse(words);
-		if (!strcmp(words[0], "memfill"))
+		else if (!strcmp(words[0], "memfill"))
 			cmd_memfill(word_num, words);
-		if (!strcmp(words[0], "memdump"))
+		else if (!strcmp(words[0], "memdump"))
 			cmd_memdump(word_num, words);
-		if (!strcmp(words[0], "read"))
+		else if (!strcmp(words[0], "read"))
 			cmd_read(words);
-		if (!strcmp(words[0], "write"))
+		else if (!strcmp(words[0], "write"))
 			cmd_write(word_num, words);
-		if (!strcmp(words[0], "mem"))
+		else if (!strcmp(words[0], "mem"))
 			cmd_mem(words, mem_blocks);
+		else if (!strcmp(words[0], "uid"))
+			cmd_uid(word_num, words);
+		else if (!strcmp(words[0], "showvar"))
+			cmd_showvar(words, env);
+		else if (!strcmp(words[0], "showenv"))
+			cmd_showenv(words, env);
+		else if (!strcmp(words[0], "changevar"))
+			cmd_changevar(word_num, words, env);
+		else if (!strcmp(words[0], "subsvar"))
+			cmd_subsvar(word_num, words, env);
+		else if (!strcmp(words[0], "fork"))
+			cmd_fork(words);
+		else if (!strcmp(words[0], "exec"))
+			cmd_exec(words + 1);
+		else if (!strcmp(words[0], "jobs"))
+			print_process_list(pr_list);
+		else if (!strcmp(words[0], "job"))
+			cmd_job(words);
+		else if (!strcmp(words[0], "deljobs"))
+			cmd_deljobs(words);
+		else
+			cmd_execute(word_num, words);
 	}
 	return 1;
 }
@@ -148,7 +168,7 @@ void cmd_hist(int word_num, char *words[], t_list *hist)
 	}
 }
 
-void cmd_command(int word_num, char *words[], t_list *hist, t_list *open_files, mem_list *mem_blocks)
+void cmd_command(int word_num, char *words[], t_list *hist, t_list *open_files, mem_list *mem_blocks, char **argv)
 {
 	
 	int i = 1;
@@ -194,7 +214,7 @@ void cmd_command(int word_num, char *words[], t_list *hist, t_list *open_files, 
 
 		if (line != NULL)
 		{
-			process_command(line, words, hist, open_files, mem_blocks);
+			process_command(line, words, hist, open_files, mem_blocks, argv);
 			free(line);
 		}
 		else

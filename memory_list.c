@@ -1,9 +1,9 @@
 #include "shell.h"
 #include "stdio.h"
 
-void *create_mem_list()
+mem_list *create_mem_list()
 {
-	t_list *new_list = (t_list *)malloc(sizeof(t_list));
+	mem_list *new_list = (mem_list *)malloc(sizeof(mem_list));
 	if (new_list == NULL)
 	{
 		perror("Malloc error while creating list.");
@@ -25,7 +25,7 @@ mem_block *create_block(void *addr, size_t size, char type)
 
 	new_block->addr = addr;
 	new_block->size = size;
-	new_block->time = strdup(current_time());
+	time(&new_block->time);
 	new_block->type = type;
 	new_block->next = NULL;
 
@@ -58,7 +58,6 @@ void destroy_mem_list(mem_list *list)
 		}
 		if (current->type == 'm')
 			free(current->addr);
-		free(current->time);
 		free(current);
 		current = next;
 	}
@@ -88,7 +87,6 @@ void remove_block(mem_list *list, size_t size, char type)
 			prev->next = tmp->next;
 		if (type == 'm')
 			free(tmp->addr);
-		free(tmp->time);
 		free(tmp);
 		printf("Deallocated %ld bytes\n", size);
 	}
@@ -112,7 +110,6 @@ void remove_shared_block(mem_list *list, key_t key)
 			list->top = tmp->next;
 		else
 			prev->next = tmp->next;
-		free(tmp->time);
 		free(tmp);
 	}
 
@@ -140,7 +137,8 @@ void print_mem_list(mem_list *list)
 	mem_block *tmp = list->top; 
 	while (tmp != NULL)
 	{
-		printf("%16p %10lu on %s", tmp->addr, (unsigned long)tmp->size, tmp->time);
+		printf("%16p %10lu on ", tmp->addr, (unsigned long)tmp->size);
+		print_time(tmp->time);
 		if (tmp->type == 'm')
 			printf(" malloc");
 		if (tmp->type == 's')
@@ -167,7 +165,8 @@ void print_mmap_blocks(mem_list *list)
 	{
 		//tmp->type == 'p'
 		if (tmp->type == 'p') {
-			printf("%16p %10lu on %s", tmp->addr, (unsigned long)tmp->size, tmp->time);
+			printf("%16p %10lu on ", tmp->addr, (unsigned long)tmp->size);
+			print_time(tmp->time);
 			printf(" %s (descriptor %d)\n", tmp->file_name, tmp->fd);
 		}
 		tmp = tmp->next;
@@ -188,7 +187,8 @@ void print_shared_blocks(mem_list *list)
 		//tmp->type == 's'
 		if (tmp->type == 's')
 		{
-			printf("%16p %10lu on %s", tmp->addr, (unsigned long)tmp->size, tmp->time);
+			printf("%16p %10lu on ", tmp->addr, (unsigned long)tmp->size);
+			print_time(tmp->time);
 			printf(" shared (key %lu)\n", (unsigned long)tmp->key);
 		}
 		tmp = tmp->next;
@@ -206,7 +206,11 @@ void print_malloc_blocks(mem_list *list)
 	while (tmp != NULL)
 	{
 		if (tmp->type == 'm')
-			printf("%16p %10lu on %s\n", tmp->addr, (unsigned long)tmp->size, tmp->time);
+		{
+			printf("%16p %10lu on ", tmp->addr, (unsigned long)tmp->size);
+			print_time(tmp->time);
+			printf("\n");
+		}
 		tmp = tmp->next;
 	}
 }
@@ -247,7 +251,6 @@ void remove_mmap_block(char *file, mem_list *list)
 	while (block != NULL) {
 		if (block->type == 'p' && !strcmp(file, block->file_name)){
 			if (ft_munmap(block->addr, block->size)) {
-				free(block->time);
 				free(block->file_name);
 				close(block->fd);
 				if (!prev)

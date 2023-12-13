@@ -259,17 +259,104 @@ char *get_file_name(char *path)
         return path;
 }
 
-char *current_time() {
-	time_t current_time;
-    time(&current_time);
+// void print_time(time_t time) {
+//     struct tm *time_info;
+//     static char time_str[20]; // Adjust the size as needed
 
-    // Format the time
+//     time_info = localtime(&current_time);
+//     strftime(time_str, sizeof(time_str), "%b %d %H:%M", time_info);
+	// printf("%s ", time_str);
+// }
+
+//p3 UTILITY
+
+void print_time(time_t time)
+{
     struct tm *time_info;
-    static char time_str[20]; // Adjust the size as needed
+    static char time_str[20];
 
-    time_info = localtime(&current_time);
-    strftime(time_str, sizeof(time_str), "%b %d %H:%M", time_info);
+    time_info = localtime(&time);
+    strftime(time_str, sizeof(time_str), "%Y/%m/%d %H:%M:%S", time_info);
+	printf("%s ", time_str);
+}
 
-    // Print the formatted time
-   return time_str;
+void store_command(process_block *block, char *args[])
+{
+	int i = 0;
+
+	size_t length = 0;
+    while(args[i] != NULL)
+        length += strlen(args[i++]);
+	
+    block->cmd = (char *)malloc(length + 1);
+    if (block->cmd == NULL)
+	{
+        perror("malloc");
+		return;
+    }
+	i = 0;
+    while(args[i] != NULL)
+	{
+        strcat(block->cmd, args[i++]);
+		strcat(block->cmd, " ");
+	}
+}
+
+void print_state(process_block *process)
+{
+    switch (process->status) {
+        case ACTIVE:
+            printf("%-8s (%.3d) ", "ACTIVE", process->ret);
+            break;
+        case FINISHED:
+            printf("%-8s (%.3d) ", "FINISHED", process->ret);
+            break;
+        case STOPPED:
+            printf("%-8s (%.3d) ", "STOPPED", process->ret);
+            break;
+        case SIGNALED:
+            printf("%-8s (%s) ", "SIGNALED", strsignal(process->ret));
+            break;
+    }
+}
+
+void update_status(int status, process_block *tmp)
+{
+	if (WIFCONTINUED(status))
+		{
+			tmp->status = ACTIVE;
+			tmp->ret = 0;
+		}
+		else if (WIFEXITED(status))
+		{
+			tmp->status = FINISHED;
+			tmp->ret = WEXITSTATUS(status);
+		}
+		else if (WIFSIGNALED(status))
+		{
+			tmp->status = SIGNALED;
+			tmp->ret = WTERMSIG(status);
+		}
+		else if (WIFSTOPPED(status))
+		{
+			tmp->status = STOPPED;
+			tmp->ret = WSTOPSIG(status);
+		}
+}
+
+void check_status(process_block *tmp)
+{
+	int status;
+
+	if (waitpid (tmp->pid, &status, WNOHANG | WUNTRACED | WCONTINUED) == tmp->pid)
+		update_status(status, tmp);
+}
+
+void process_info(process_block *tmp)
+{
+	struct passwd *user_info = getpwuid(tmp->owner_id);
+	printf("%d %10s p=%2d ", tmp->pid, user_info != NULL ? user_info->pw_name : "unknown", getpriority(PRIO_PROCESS, tmp->pid));
+	print_time(tmp->time);
+	print_state(tmp);
+	printf("%s\n", tmp->cmd);
 }

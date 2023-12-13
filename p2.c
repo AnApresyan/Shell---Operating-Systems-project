@@ -1,41 +1,5 @@
 #include "shell.h"
 
-int main(int argc, char **argv)
-{
-	char line[MAXLINE];
-	char *words[MAXLINE/2];
-	t_list *hist = create_list();
-	t_list *open_files = create_list();
-	mem_list *mem_blocks = create_mem_list();
-
-	if (!hist || !open_files)
-		return -1;
-
-	if (is_fd_open(0))
-		insert_open_file(open_files, new_tfile(0, "Standard input"));
-	if (is_fd_open(1))
-		insert_open_file(open_files, new_tfile(1, "Standard output"));
-	if (is_fd_open(2))
-		insert_open_file(open_files, new_tfile(2, "Standard error"));
-	
-	while (1)
-	{
-		printf("\001\033[1;35m\002Shell> \001\033[1;0m\002");
-		if (!fgets(line, sizeof(line), stdin))
-		{
-			perror("exit\n");
-			return (EXIT_FAILURE);
-		}
-		insert_element(hist, strdup(line));
-		if (process_command(line, words, hist, open_files, mem_blocks) == 0)
-			break;
-	}
-	destroy_list(hist, 0);
-	destroy_list(open_files, 1);
-	destroy_mem_list(mem_blocks);
-	return (EXIT_SUCCESS);
-}
-
 void cmd_malloc(int word_num, char *words[], mem_list *mem_blocks)
 {
 	long n = 0;
