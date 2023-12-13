@@ -56,25 +56,38 @@ void cmd_uid(int word_num, char *words[])
 	}
 	if (!strcmp(words[1], "-set"))
 	{
-		
-		if (words[2] != NULL && !strcmp(words[2], "-l"))
-			l = 1;
-		uid_t id;
-		if (l)
+		if (words[2] != NULL)
 		{
-			struct passwd *pwd = getpwnam(words[2]);
-			if (pwd)
-				id = pwd->pw_uid;
-			else
+			if (!strcmp(words[2], "-l"))
+				l = 1;
+			uid_t id;
+			if (l)
 			{
-				perror("getpwnam");
-				return;
+				if (words[3])
+				{
+					struct passwd *pwd = getpwnam(words[3]);
+					if (pwd)
+						id = pwd->pw_uid;
+					else
+					{
+						perror("getpwnam");
+						return;
+					}
+				}
+				else
+				{
+					printf("Usage: uid [-get|-set] [-l] [id]\n");
+					return;
+				}
 			}
+			else
+				id  = strtoul(words[2], NULL, 10); //ul?
+			if (setuid(id) == -1)
+				perror("setuid");
 		}
 		else
-			id  = strtoul(words[2], NULL, 10); //ul?
-		if (setuid(id) == -1)
-			perror("setuid");
+			printf("Usage: uid [-get|-set] [-l] [id]\n");
+
 	}
 }
 
